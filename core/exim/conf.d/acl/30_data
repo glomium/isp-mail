@@ -1,0 +1,63 @@
+
+### acl/40_exim4-config_check_data
+#################################
+
+# This ACL is used after the contents of a message have been received. This
+# is the ACL in which you can test a message's headers or body, and in
+# particular, this is where you can invoke external virus or spam scanners.
+
+acl_data:
+
+  {% if config.check_rfc2822 %}
+  # Deny unless the addresses in the header is syntactically correct.
+  deny
+    message     = Your message does not conform to RFC2822 standard
+    log_message = message header fail syntax check
+    !verify     = header_syntax
+
+  # require that there is a verifiable sender address in at least
+  # one of the "Sender:", "Reply-To:", or "From:" header lines.
+  deny
+    message     = Your message does not conform to RFC2822 standard
+    log_message = missing header lines
+    !verify     = header_sender
+    !hosts      = +relay_from_hosts
+  {% endif %}
+
+  # Reject messages with serious MIME container errors
+  deny  message = Found MIME error ($demime_reason).
+    demime = *
+    condition = ${if >{$demime_errorlevel}{2}{1}{0}}
+
+  # Deny if the message contains malware. Before enabling this check, you
+  # must install a virus scanner and set the av_scanner option in the
+  # main configuration.
+  #
+  # exim4-daemon-heavy must be used for this section to work.
+  #
+  deny
+    malware = *
+    demime  = *
+    message = This message was detected as possible malware ($malware_name).
+
+# # Add headers to a message if it is judged to be spam. Before enabling this,
+# # you must install SpamAssassin. You also need to set the spamd_address
+# # option in the main configuration.
+# #
+# # exim4-daemon-heavy must be used for this section to work.
+# #
+# # Please note that this is only suiteable as an example. There are
+# # multiple issues with this configuration method. For example, if you go
+# # this way, you'll give your spamassassin daemon write access to the
+# # entire exim spool which might be a security issue in case of a
+# # spamassassin exploit.
+# #
+# # See the exim docs and the exim wiki for more suitable examples.
+# warn
+#   spam = Debian-exim:true
+#   add_header = X-Spam_score: $spam_score
+#   add_header = X-Spam_bar: $spam_bar
+#   add_header = X-Spam_report: $spam_report
+
+  # accept otherwise
+  accept

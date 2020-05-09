@@ -1,0 +1,47 @@
+# This access control list is used for the HELO or EHLO command in 
+# an incoming SMTP transaction. The tests are run in order until the
+# greeting is either accepted or denied.
+
+acl_helo:
+
+  {% if not config.login_on_port_25 %}
+  # Accept connections via the alternative smtp ports directly
+  accept
+    condition = ${if eq {$interface_port}{25}{false}{true}}
+  {% endif %}
+
+  {% if config.smtp_login_ip %}
+  # Accept connections on the smtp login interface directly
+  accept
+    condition = ${if eq {$interface_address}{ {{- config.smtp_login_ip -}} }{true}{false} }
+  {% endif %}
+
+  # Accept mail received over local SMTP (i.e. not over TCP/IP).  
+  # We do this by testing for an empty sending host field.
+  # Also accept mails received from hosts for which we relay mail.
+  accept
+    hosts = : +relay_from_hosts
+    control = dkim_disable_verify
+
+  # Drop all connection that only provide a ip als helo_name
+  drop
+    condition = ${if isip{$sender_helo_name}}
+    delay = 20s
+
+  # Drop all connection where the sender's helo_name parses as
+  # a domain managed by this mailserver
+  drop
+    condition   = ${if match_domain{\
+                       $sender_helo_name}\
+                       {+local_domains:+virtual_domains:+relay_to_domains}\
+                       {1}{0}\
+                  }
+    delay = 20s
+
+  # accept all domains after 15s where the helo could not be verified
+  accept
+    !verify = helo
+    delay = 15s
+
+  # accept all other
+  accept

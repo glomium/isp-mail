@@ -1,0 +1,83 @@
+
+### router/250_vmail
+#################################
+
+
+vmail_mbox_bcc:
+  debug_print = "R: $router_name for $local_part@$domain"
+  driver = redirect
+  domains = +virtual_domains
+  unseen = true
+  data = ${lookup pgsql{ \
+     SELECT \
+         REGEXP_REPLACE({{ hosting.prefix }}address.forward,E'[\\n\\r]+',',','g') \
+     FROM {{ hosting.prefix }}address \
+     LEFT JOIN {{ hosting.prefix }}domain ON {{ hosting.prefix }}domain.id = {{ hosting.prefix }}address.domain_id \
+     WHERE  \
+         ( \
+             {{ hosting.prefix }}address.forward IS NOT NULL \
+             OR \
+             {{ hosting.prefix }}address.forward != '' \
+         ) \
+     AND {{ hosting.prefix }}address.account_id IS NOT NULL \
+     AND {{ hosting.prefix }}address.mailinglist_id IS NULL \
+     AND {{ hosting.prefix }}address.local = '${quote_pgsql:$local_part}' \
+     AND {{ hosting.prefix }}domain.full_name='${quote_pgsql:$domain}' \
+     AND {{ hosting.prefix }}domain.accept_mail \
+     LIMIT 1}{$value}}
+
+
+vmail_mbox:
+  debug_print = "R: $router_name for $local_part@$domain"
+  driver = redirect
+  domains = +virtual_domains
+  redirect_router = vmail_mbox_lda
+  data = ${lookup pgsql{ \
+     SELECT {{ hosting.prefix }}account.username || '@vmail' \
+     FROM {{ hosting.prefix }}account \
+     LEFT JOIN {{ hosting.prefix }}address ON {{ hosting.prefix }}address.account_id = {{ hosting.prefix }}account.id \
+     LEFT JOIN {{ hosting.prefix }}domain ON {{ hosting.prefix }}domain.id = {{ hosting.prefix }}address.domain_id \
+     WHERE  \
+         ( \
+             {{ hosting.prefix }}address.local = '${quote_pgsql:$local_part}' \
+             OR \
+             {{ hosting.prefix }}address.local IS NULL \
+             OR \
+             {{ hosting.prefix }}address.local = '' \
+         ) \
+     AND {{ hosting.prefix }}address.mailinglist_id IS NULL \
+     AND {{ hosting.prefix }}domain.full_name='${quote_pgsql:$domain}' \
+     AND {{ hosting.prefix }}domain.accept_mail \
+     ORDER BY {{ hosting.prefix }}address.catchall ASC \
+     LIMIT 1}{$value}}
+
+
+vmail_mbox_forward:
+  debug_print = "R: $router_name for $local_part@$domain"
+  driver = redirect
+  domains = +virtual_domains
+  data = ${lookup pgsql{ \
+     SELECT \
+         REGEXP_REPLACE({{ hosting.prefix }}address.forward,E'[\\n\\r]+',',','g') \
+     FROM {{ hosting.prefix }}address \
+     LEFT JOIN {{ hosting.prefix }}domain ON {{ hosting.prefix }}domain.id = {{ hosting.prefix }}address.domain_id \
+     WHERE  \
+         ( \
+             {{ hosting.prefix }}address.forward IS NOT NULL \
+             OR \
+             {{ hosting.prefix }}address.forward != '' \
+         ) \
+     AND {{ hosting.prefix }}address.account_id IS NULL \
+     AND {{ hosting.prefix }}address.mailinglist_id IS NULL \
+     AND {{ hosting.prefix }}address.local = '${quote_pgsql:$local_part}' \
+     AND {{ hosting.prefix }}domain.full_name='${quote_pgsql:$domain}' \
+     AND {{ hosting.prefix }}domain.accept_mail \
+     LIMIT 1}{$value}}
+
+
+vmail_mbox_lda:
+  debug_print = "R: $router_name for $local_part@$domain"
+  driver = accept
+  domains = vmail
+  transport = dovecot_lda
+  no_more

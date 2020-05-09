@@ -1,0 +1,24 @@
+
+acl_dkim:
+
+
+  accept
+    authenticated = *
+
+
+  accept
+    hosts = +relay_from_hosts
+
+
+  warn
+    add_header = X-DKIM-Status: $dkim_verify_status [($dkim_cur_signer) - $sender_host_address]
+    delay   = 15s
+ 
+
+# deny
+#   dkim_status = fail:invalid
+#   message = Rejected: $dkim_verify_reason
+#   delay   = 15s
+
+
+  accept

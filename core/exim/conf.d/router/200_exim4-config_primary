@@ -1,0 +1,39 @@
+
+### router/200_exim4-config_primary
+#################################
+# This file holds the primary router, responsible for nonlocal mails
+
+# deliver mail to the recipient if recipient domain is a domain we
+# relay for. We do not ignore any target hosts here since delivering to
+# a site local or even a link local address might be wanted here, and if
+# such an address has found its way into the MX record of such a domain,
+# the local admin is probably in a place where that broken MX record
+# could be fixed.
+
+# dnslookup_relay_to_domains:
+#   debug_print = "R: dnslookup_relay_to_domains for $local_part@$domain"
+#   driver = dnslookup
+#   domains = ! +local_domains : +relay_to_domains
+#   transport = remote_smtp
+#   same_domain_copy_routing = yes
+#   no_more
+
+# deliver mail directly to the recipient. This router is only reached
+# for domains that we do not relay for. Since we most probably can't
+# have broken MX records pointing to site local or link local IP
+# addresses fixed, we ignore target hosts pointing to these addresses.
+
+dnslookup:
+  debug_print = "R: dnslookup for $local_part@$domain"
+  driver = dnslookup
+  domains = !+local_domains:!+virtual_domains
+  transport = remote_smtp
+  same_domain_copy_routing = yes
+  # ignore private rfc1918 and APIPA addresses
+  ignore_target_hosts = 0.0.0.0 : 127.0.0.0/8 : 192.168.0.0/16 :\
+                        172.16.0.0/12 : 10.0.0.0/8 : 169.254.0.0/16 :\
+                        255.255.255.255
+  no_more
+
+# The "no_more" above means that all later routers are for
+# domains in the local_domains list, i.e. just like Exim 3 directors.

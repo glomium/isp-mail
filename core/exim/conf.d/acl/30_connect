@@ -1,0 +1,38 @@
+# This access control list is used at the start of an incoming
+# connection.  The tests are run in order until the connection is
+# either accepted or denied.
+
+acl_connect:
+  
+  {% if not config.login_on_port_25 %}
+  # Accept connections via the alternative smtp ports directly
+  accept
+    condition = ${if eq {$interface_port}{25}{false}{true}}
+  {% endif %}
+
+  {% if config.smtp_login_ip %}
+  # Accept connections on the smtp login interface directly
+  accept
+    condition = ${if eq {$interface_address}{ {{- config.smtp_login_ip -}} }{true}{false}}
+  {% endif %}
+
+  # Accept mail received over local SMTP (i.e. not over TCP/IP).  We do
+  # this by testing for an empty sending host field.
+  # Also accept mails received over a local interface, and from hosts
+  # for which we relay mail.
+  accept
+    hosts   = : +relay_from_hosts
+    control = dkim_disable_verify
+
+  # If reverse DNS lookup of the sender's host fails (i.e.
+  # there is no rDNS entry, or a forward lookup of the resulting name
+  # does not match the original IP address)
+  accept
+    # message = "Welcome $sender_host_address - nice to meet you!"
+    !verify = reverse_host_lookup
+    delay   = 15s
+
+  # greeting pause for smtp port 25
+  accept
+    # message = "Welcome $sender_host_name ($sender_host_address) - nice to meet you!"
+    delay = 2s

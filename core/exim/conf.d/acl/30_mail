@@ -1,0 +1,29 @@
+# This access control list is used for the MAIL FROM: command in an
+# incoming SMTP transaction.  The tests are run in order until the
+# sender address is either accepted or denied.
+
+acl_mail:
+
+  {% if not config.login_on_port_25 %}
+  # drop connections on the SMA Port that did not auth
+  drop
+    condition = ${if eq {$interface_port}{25}{false}{true}}
+    !authenticated = *
+  {% endif %}
+
+  {% if config.smtp_login_ip %}
+  # drop connections on the SMA Address that did not auth
+  drop
+    condition = ${if eq {$interface_address}{ {{- exim.smtp_login_ip -}} }{true}{false} }
+    !authenticated = *
+  {% endif %}
+
+  # Accept mail received over local SMTP (i.e. not over TCP/IP).  
+  # We do this by testing for an empty sending host field.
+  # Also accept mails received from hosts for which we relay mail.
+  accept
+    hosts   = : +relay_from_hosts
+    control = dkim_disable_verify
+
+  # accept everything else (policy checks are in rcpt acl)
+  accept

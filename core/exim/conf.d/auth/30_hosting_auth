@@ -1,0 +1,33 @@
+### auth/30_hosting_auth
+#################################
+
+hosting_md5:
+  driver = cram_md5
+  public_name = CRAM-MD5
+  server_secret = ${lookup pgsql{\
+    SELECT password FROM {{ hosting.prefix }}account WHERE LOWER(username) = SPLIT_PART(LOWER('${quote_pgsql:$1}'),'@',1) \
+  }}
+# server_advertise_condition = ${if eq{$tls_in_cipher}{}{}{*}}
+  server_advertise_condition = ${if eq{$tls_cipher}{}{}{*}}
+  server_set_id = $1
+
+hosting_plain:
+  driver = plaintext
+  public_name = PLAIN
+  server_condition = ${lookup pgsql{\
+    SELECT COUNT(*) FROM {{ hosting.prefix }}account WHERE LOWER(username) = SPLIT_PART(LOWER('${quote_pgsql:$2}'),'@',1) AND password = '${quote_pgsql:$3}' \
+  }}
+# server_advertise_condition = ${if eq{$tls_in_cipher}{}{}{*}}
+  server_advertise_condition = ${if eq{$tls_cipher}{}{}{*}}
+  server_set_id = $2
+
+hosting_login:
+  driver = plaintext
+  public_name = LOGIN
+  server_prompts = "Username:: : Password::"
+  server_condition = ${lookup pgsql{\
+    SELECT COUNT(*) FROM {{ hosting.prefix }}account WHERE LOWER(username) = SPLIT_PART(LOWER('${quote_pgsql:$1}'),'@',1) AND password = '${quote_pgsql:$2}' \
+  }}
+# server_advertise_condition = ${if eq{$tls_in_cipher}{}{}{*}}
+  server_advertise_condition = ${if eq{$tls_cipher}{}{}{*}}
+  server_set_id = $1

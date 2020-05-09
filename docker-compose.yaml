@@ -1,0 +1,40 @@
+version: '3.7'
+
+
+x-defaults: &defaults
+  logging:
+    driver: json-file
+    options:
+      max-size: 2m
+      max-file: 5
+
+
+services:
+
+    dovecot:
+        <<: *defaults
+        image: isp-dovecot:local
+        deploy:
+            mode: replicated
+            replicas: 1
+            update_config:
+                order: start-first
+        networks:
+            - mail
+
+    roundcube:
+        <<: *defaults
+        image: isp-exim:local
+        deploy:
+            mode: replicated
+            replicas: 1
+            update_config:
+                order: start-first
+        networks:
+            - mail
+
+networks:
+    mail:
+
+volumes:
+    mailstorage:

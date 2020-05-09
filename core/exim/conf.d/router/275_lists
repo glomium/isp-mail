@@ -1,0 +1,75 @@
+
+### router/275_lists
+#################################
+
+vmail_mailinglist_accept:
+    debug_print = "R: $router_name for $local_part@$domain"
+    driver = redirect
+    domains = +virtual_domains
+
+    data = ${lookup pgsql{ \
+        SELECT \
+            LOWER({{ hosting.prefix }}subscriber.email) \
+        FROM {{ hosting.prefix }}address \
+        LEFT JOIN {{ hosting.prefix }}domain ON {{ hosting.prefix }}domain.id = {{ hosting.prefix }}address.domain_id \
+        JOIN {{ hosting.prefix }}subscriber ON {{ hosting.prefix }}subscriber.mailinglist_id = {{ hosting.prefix }}address.mailinglist_id \
+        WHERE \
+            {{ hosting.prefix }}address.local = '${quote_pgsql:$local_part}' \
+            AND \
+            {{ hosting.prefix }}domain.full_name='${quote_pgsql:$domain}' \
+            AND \
+            {{ hosting.prefix }}domain.accept_mail \
+            AND \
+            {{ hosting.prefix }}subscriber.active \
+        }{$value}}
+  
+    condition = ${lookup pgsql{ \
+        SELECT \
+            CASE WHEN {{ hosting.prefix }}list.check_sender=0 THEN true ELSE {{ hosting.prefix }}subscriber.can_send END \
+        FROM {{ hosting.prefix }}address \
+        LEFT JOIN {{ hosting.prefix }}domain ON {{ hosting.prefix }}domain.id = {{ hosting.prefix }}address.domain_id \
+        JOIN {{ hosting.prefix }}list ON {{ hosting.prefix }}list.id = {{ hosting.prefix }}address.mailinglist_id \
+        JOIN {{ hosting.prefix }}subscriber ON {{ hosting.prefix }}subscriber.mailinglist_id = {{ hosting.prefix }}address.mailinglist_id \
+        WHERE \
+            {{ hosting.prefix }}address.local = '${quote_pgsql:$local_part}' \
+            AND \
+            {{ hosting.prefix }}domain.full_name='${quote_pgsql:$domain}' \
+            AND \
+            {{ hosting.prefix }}domain.accept_mail \
+            AND \
+            {{ hosting.prefix }}subscriber.email = LOWER('${quote_pgsql:$sender_address}') \
+            AND \
+            {{ hosting.prefix }}subscriber.active \
+        LIMIT 1}{$value}}
+
+    errors_to = root
+    headers_add = From: $sender_address
+    headers_add = Sender: $local_part@$domain
+    headers_add = List-Id: $local_part@$domain
+    headers_add = List-Post: <mailto:$local_part@$domain>
+    headers_add = Precedence: list
+    headers_add = X-BeenThere: $local_part@$domain
+    no_more
+
+
+vmail_mailinglist_deny:
+    debug_print = "R: $router_name for $local_part@$domain"
+    driver = redirect
+    domains = +virtual_domains
+    allow_fail = true
+
+    condition = ${lookup pgsql{ \
+        SELECT \
+            true \
+        FROM {{ hosting.prefix }}address \
+        LEFT JOIN {{ hosting.prefix }}domain ON {{ hosting.prefix }}domain.id = {{ hosting.prefix }}address.domain_id \
+        JOIN {{ hosting.prefix }}list ON {{ hosting.prefix }}list.id = {{ hosting.prefix }}address.mailinglist_id \
+        WHERE \
+            {{ hosting.prefix }}address.local = '${quote_pgsql:$local_part}' \
+            AND \
+            {{ hosting.prefix }}domain.full_name='${quote_pgsql:$domain}' \
+            AND \
+            {{ hosting.prefix }}domain.accept_mail \
+        LIMIT 1}{$value}}
+
+    data = :fail: (en) The address $sender_address is not allowed to send messages to the mailinglist $local_part@$domain.\\n(de) Die Adresse $sender_address hat keine Erlaubnis Nachrichten an die Mailing-Liste $local_part@$domain zu senden.
