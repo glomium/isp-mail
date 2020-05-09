@@ -24,7 +24,7 @@ $config = array();
 // Currently supported db_providers: mysql, pgsql, sqlite, mssql or sqlsrv
 // For examples see http://pear.php.net/manual/en/package.database.mdb2.intro-dsn.php
 // NOTE: for SQLite use absolute path: 'sqlite:////full/path/to/sqlite.db?mode=0646'
-$config['db_dsnw'] = 'pgsql://{{ hosting.db_user }}:{{ hosting.db_pass }}@{{ hosting.db_host }}:{{ hosting.db_port }}/{{ hosting.db_name }}';
+$config['db_dsnw'] = 'pgsql://{{DB_USERNAME}}:{{DB_PASSWORD}}@{{DB_HOST}}:5432/{{DB_NAME}}';
 $config['db_prefix'] = 'roundcube_';
 
 $config['enable_installer'] = false;
@@ -39,9 +39,9 @@ $config['enable_installer'] = false;
 // %d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
 // %s - domain name after the '@' from e-mail address provided at login screen
 // For example %n = mail.domain.tld, %t = domain.tld
-$config['default_host'] = '{{ config.config.default_host }}';
+$config['default_host'] = '{{DEFAULT_HOST}}';
 
-$config['skin_logo'] = '{{ config.config.skin_logo }}';
+$config['skin_logo'] = '{{SKIN_LOGO}}';
 
 // SMTP server host (for sending mails).
 // To use SSL/TLS connection, enter hostname with prefix ssl:// or tls://
@@ -53,32 +53,34 @@ $config['skin_logo'] = '{{ config.config.skin_logo }}';
 // %d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
 // %z - IMAP domain (IMAP hostname without the first part)
 // For example %n = mail.domain.tld, %t = domain.tld
-$config['smtp_server'] = '';
+$config['smtp_server'] = '{{SMTP_SERVER}}';
 
 // SMTP port (default is 25; use 587 for STARTTLS or 465 for the
 // deprecated SSL over SMTP (aka SMTPS))
-$config['smtp_port'] = 25;
+$config['smtp_port'] = {{SMTP_PORT}};
 
 // SMTP username (if required) if you use %u as the username Roundcube
 // will use the current username for login
+# $config['smtp_user'] = '{{SMTP_USERNAME}}';
 $config['smtp_user'] = '';
 
 // SMTP password (if required) if you use %p as the password Roundcube
 // will use the current user's password for login
+# $config['smtp_pass'] = '{{SMTP_PASSWORD}}';
 $config['smtp_pass'] = '';
 
 // provide an URL where a user can get support for this Roundcube installation
 // PLEASE DO NOT LINK TO THE ROUNDCUBE.NET WEBSITE HERE!
-$config['support_url'] = '{{ config.config.support_url }}';
+$config['support_url'] = '{{SUPPORT_URL}}';
 
 // Name your service. This is displayed on the login screen and in the window title
-$config['product_name'] = '{{ config.config.product_name }}';
+$config['product_name'] = '{{PRODUCT_NAME}}';
 
 // this key is used to encrypt the users imap password which is stored
 // in the session record (and the client cookie if remember password is enabled).
 // please provide a string of exactly 24 chars.
 // YOUR KEY MUST BE DIFFERENT THAN THE SAMPLE VALUE FOR SECURITY REASONS
-$config['des_key'] = '{{ salt['grains.get_or_set_hash']('roundcube_des_key', 24) }}';
+$config['des_key'] = '{{DES_KEY}}';
 
 // List of active plugins (in plugins/ directory)
 $config['plugins'] = array(
@@ -157,4 +159,4 @@ $config['date_format'] = 'd.m.Y';
 $config['quota_zero_as_unlimited'] = true;
 
 $config['managesieve_script_name'] = 'Filter';
-$config['managesieve_default'] = '/etc/dovecot/default.sieve';
+$config['managesieve_default'] = '/etc/default.sieve';

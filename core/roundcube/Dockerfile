@@ -30,11 +30,12 @@ RUN rm * \
  && mv roundcubemail-${VERSION}/* . \
  && rm -r roundcube.tar.gz roundcubemail-${VERSION}
 
-COPY core/roundcube/config.inc.php /var/www/roundcube/config/config.inc.php
-
 # Setup Webserver
-COPY core/roundcube/ports.conf core/roundcube/apache2.conf /etc/apache2/
+COPY core/dovecot/default.sieve /etc/default.sieve
+COPY core/roundcube/entrypoint.sh /entrypoint.sh
+COPY core/roundcube/config.inc.php /var/www/html/config/config.inc.php
 COPY core/roundcube/default.conf /etc/apache2/sites-enabled/000-default.conf
+COPY core/roundcube/ports.conf core/roundcube/apache2.conf /etc/apache2/
 
 RUN a2dismod mpm_event \
  && a2enmod mpm_prefork
@@ -49,4 +50,4 @@ ENV APACHE_PID_FILE /var/run/apache2.pid
 # HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -f http://127.0.0.1:8080 || exit 1
 
 EXPOSE 8080/tcp
-ENTRYPOINT ["apache2", "-DFOREGROUND", "-eDEBUG"]
+ENTRYPOINT ["/entrypoint.sh"]

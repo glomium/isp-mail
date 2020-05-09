@@ -30,13 +30,40 @@ services:
             replicas: 1
             update_config:
                 order: start-first
+        environment:
+            ROUNDCUBE_DB_HOST: ''
+            ROUNDCUBE_DB_NAME: ''
+            ROUNDCUBE_DEFAULT_HOST: ''
+            ROUNDCUBE_SKIN_LOGO: ''
+            ROUNDCUBE_SMTP_SERVER: ''
+            ROUNDCUBE_SMTP_PORT: ''
+            ROUNDCUBE_SUPPORT_URL: ''
+            ROUNDCUBE_PRODUCT_NAME: ''
         ports:
             - "8080:8080"
         networks:
             - mail
+        secrets:
+            - roundcube_des_key
+            - roundcube_db_username
+            - roundcube_db_password
+            - roundcube_smtp_username
+            - roundcube_smtp_password
 
 networks:
     mail:
 
 volumes:
     mailstorage:
+
+secrets:
+    roundcube_des_key:
+        file: ./secrets/roundcube_des_key
+    roundcube_db_username:
+        file: ./secrets/db_username
+    roundcube_db_password:
+        file: ./secrets/db_password
+    roundcube_smtp_username:
+        file: ./secrets/smtp_username
+    roundcube_smtp_password:
+        file: ./secrets/smtp_password
