@@ -11,17 +11,6 @@ x-defaults: &defaults
 
 services:
 
-    # dovecot:
-    #     <<: *defaults
-    #     image: isp-dovecot:local
-    #     deploy:
-    #         mode: replicated
-    #         replicas: 1
-    #         update_config:
-    #             order: start-first
-    #     networks:
-    #         - mail
-
     roundcube:
         <<: *defaults
         image: isp-roundcube:local
