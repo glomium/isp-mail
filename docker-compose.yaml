@@ -25,9 +25,7 @@ services:
             ROUNDCUBE_DEFAULT_HOST: ''
             ROUNDCUBE_SKIN_LOGO: ''
             ROUNDCUBE_SMTP_SERVER: ''
-            ROUNDCUBE_SMTP_PORT: ''
             ROUNDCUBE_SUPPORT_URL: ''
-            ROUNDCUBE_PRODUCT_NAME: ''
         ports:
             - "8080:8080"
         networks:
