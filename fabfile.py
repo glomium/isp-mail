@@ -47,6 +47,8 @@ def deploy(c):
 
     install = list(set(INSTALL))
     purge = list(set(PURGE))
+    print(int_images)
+    exit()
 
     c.sudo('DEBIAN_FRONTEND=noninteractive apt-get update -qq -y')
     c.sudo('DEBIAN_FRONTEND=noninteractive apt-get purge -qq -y %s' % ' '.join(purge))
@@ -58,10 +60,10 @@ def deploy(c):
     # c.sudo('timedatectl set-timezone Europe/Berlin')
     c.sudo('systemctl enable docker.service')
 
-    # swarmnode = c.sudo('docker info | grep Swarm | awk \'{print $2}\'').stdout.strip() == "active"
-    # if not swarmnode:
-    #     c.sudo('docker swarm init --advertise-addr 127.0.0.1')
-    # c.sudo('systemctl restart docker.service')
+    swarmnode = c.sudo('docker info | grep Swarm | awk \'{print $2}\'').stdout.strip() == "active"
+    if not swarmnode:
+        c.sudo('docker swarm init --advertise-addr 127.0.0.1')
+        c.sudo('systemctl restart docker.service')
 
     if int_images:
         tempfile_l = c.local("tempfile -s .tar", hide="both").stdout.strip()
@@ -78,8 +80,8 @@ def deploy(c):
     for image in ext_images:
         c.sudo("docker image pull -q %s" % image)
 
-    copy_file(c, "docker-compose.yaml", "/root/docker-compose.yaml")
-    c.sudo('docker stack deploy -c /root/docker-compose.yaml summer')
+    copy_file(c, "docker-compose.yaml", "/root/mail.yaml")
+    c.sudo('docker stack deploy -c /root/mail.yaml mail')
 
 
 def copy_file(c, source, target, user="root", group="root", mod="644"):
